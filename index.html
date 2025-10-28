@@ -50,6 +50,8 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        const API = "http://localhost:5000";
+
         const getPlaceholderImage = (width, height, text) => {
             return `https://placehold.co/${width}x${height}/4A5568/CBD5E0?text=${text}`;
         };
@@ -115,24 +117,44 @@
                 setContactForm(prev => ({ ...prev, [name]: value }));
             };
 
-            const handleFormSubmit = (e) => {
+            /* ==== EDITED: now actually POSTs to your backend /api/contacts ==== */
+            const handleFormSubmit = async (e) => {
                 e.preventDefault();
-                console.log("Form Data Submitted:", contactForm);
-                
+
                 if (!contactForm.firstName || !contactForm.emailAddress || !contactForm.message) {
                     setStatusMessage({ text: "Please fill out all required fields.", type: 'error' });
                     return;
                 }
 
-                setStatusMessage({ text: "Thank you for your message! I will get back to you shortly.", type: 'success' });
-                setContactForm({
-                    firstName: '',
-                    lastName: '',
-                    contactNumber: '',
-                    emailAddress: '',
-                    message: ''
-                });
+                try {
+                    const body = {
+                        firstname: contactForm.firstName,
+                        lastname: contactForm.lastName,
+                        email: contactForm.emailAddress
+                        // (assignment DB schema doesn't include phone/message)
+                    };
+
+                    const res = await fetch(`${API}/api/contacts`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (!res.ok) throw new Error("Request failed");
+
+                    setStatusMessage({ text: "✅ Message saved successfully!", type: "success" });
+                    setContactForm({
+                        firstName: '',
+                        lastName: '',
+                        contactNumber: '',
+                        emailAddress: '',
+                        message: ''
+                    });
+                } catch (err) {
+                    setStatusMessage({ text: "❌ Could not connect to server. Is it running?", type: "error" });
+                }
             };
+            /* ================================================================ */
 
             const renderPage = () => {
                 switch (currentPage) {
